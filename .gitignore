@@ -1,0 +1,5 @@
+*.backup.html
+ct-vbc-v5*.html
+vcard-builder-source-code.html
+*.pdf
+.DS_Store
