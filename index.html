@@ -365,21 +365,90 @@
 #ctv5 .share-qr-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
 #ctv5 .share-qr-btns .btn{min-height:40px;}
 
-/* ---------- shared-card viewer ---------- */
+/* ---------- shared-card viewer (#p= mode only) ---------- */
 #ctv5 .viewer{
-  min-height:100vh;background:var(--page);
-  display:flex;align-items:center;justify-content:center;padding:32px 16px;
+  min-height:100vh;min-height:100dvh;background:var(--page);
+  display:flex;flex-direction:column;align-items:stretch;
+  padding:0;margin:0;
 }
 #ctv5 .viewer[hidden]{display:none;}
-#ctv5 .viewer-inner{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;}
-#ctv5 .viewer-head{
-  text-align:center;max-width:520px;width:100%;
-  display:flex;flex-direction:column;gap:8px;
+#ctv5 .viewer-main,
+#ctv5 .viewer main{
+  flex:1 0 auto;width:100%;min-width:0;
+  display:flex;flex-direction:column;
+  padding:0;margin:0;
 }
-#ctv5 .viewer-head .sub{max-width:42ch;margin:0 auto;}
-#ctv5 .viewer-note{font-size:12.5px;color:var(--muted);text-align:center;}
-#ctv5 .viewer-note a{color:var(--accent);text-decoration:none;font-weight:600;}
-#ctv5 .viewer-note a:hover{text-decoration:underline;}
+#ctv5 .viewer-card{
+  width:100%;background:var(--panel);
+  border:none;border-radius:0;margin:0;
+  flex:1 0 auto;display:flex;flex-direction:column;
+}
+#ctv5 .viewer .hero{
+  flex:none;height:104px;background:var(--hero);margin:0;border-radius:0;
+}
+#ctv5 .viewer-card-body{
+  position:relative;z-index:1;padding:0 16px 24px;margin-top:-32px;
+  flex:1 0 auto;display:flex;flex-direction:column;
+}
+#ctv5 .viewer .card-avatar{
+  width:64px;height:64px;border-radius:50%;
+  background:#12203A;border:1.5px solid var(--accent);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;font-weight:600;letter-spacing:.02em;margin-bottom:12px;
+}
+#ctv5 .viewer .card-name{
+  font-size:22px;font-weight:600;letter-spacing:-.02em;margin:6px 0 0;
+  line-height:1.2;
+}
+#ctv5 .viewer .card-role{
+  font-size:16px;color:var(--muted);margin-top:4px;line-height:1.4;
+}
+#ctv5 .viewer .card-bio{
+  font-size:16px;color:var(--muted);margin-top:12px;line-height:1.5;
+}
+#ctv5 .viewer .card-acts{display:flex;margin-top:16px;}
+#ctv5 .viewer .card-acts .btn{
+  flex:1;width:100%;min-height:44px;padding:0 14px;font-size:16px;border-radius:8px;
+}
+#ctv5 .viewer .card-rows{
+  margin-top:16px;border-top:1px solid var(--divider);padding-top:14px;
+  display:flex;flex-direction:column;gap:4px;
+}
+#ctv5 .viewer .card-row{
+  display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 0;
+  font-size:16px;line-height:1.4;color:var(--text);text-decoration:none;
+  border-radius:6px;
+}
+#ctv5 .viewer a.card-row:hover{color:var(--accent);}
+#ctv5 .viewer .card-row .icontile{
+  flex:none;width:22px;height:22px;border-radius:6px;
+  background:#152036;color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+}
+#ctv5 .viewer .card-row .icontile svg{width:12px;height:12px;}
+#ctv5 .viewer .card-empty{font-size:16px;color:var(--muted);padding:8px 0;}
+#ctv5 .viewer-foot{
+  flex:none;width:100%;padding:16px;
+  text-align:center;
+}
+#ctv5 .viewer-note{font-size:12.5px;color:var(--muted);margin:0;line-height:1.5;}
+#ctv5 .viewer-note a{color:var(--muted);text-decoration:underline;font-weight:500;padding:4px;}
+#ctv5 .viewer-note a:hover{color:var(--accent);}
+@media (min-width:640px){
+  #ctv5 .viewer-main,
+  #ctv5 .viewer main{
+    display:flex;flex-direction:row;justify-content:center;align-items:flex-start;
+    padding:48px 24px 24px;
+  }
+  #ctv5 .viewer-card{
+    flex:0 0 auto;max-width:420px;
+    border:1px solid var(--divider);border-radius:12px;overflow:hidden;
+  }
+  #ctv5 .viewer-card-body{
+    flex:none;
+  }
+  #ctv5 .viewer-foot{padding:20px 24px 28px;}
+}
 #ctv5 .viewer-error{
   min-height:100vh;background:var(--page);
   display:flex;align-items:center;justify-content:center;padding:32px 16px;
@@ -497,9 +566,8 @@
 </style>
 
 <div id="ctv5">
-  <a class="skip" href="#ctv5-main">Skip to main content</a>
-
   <div class="shell">
+    <a class="skip" href="#ctv5-main">Skip to main content</a>
     <!-- ===================== SIDEBAR ===================== -->
     <aside class="sidebar">
       <div class="logo">
@@ -824,41 +892,27 @@
        browser never sends to any server. Photos stay on the sender's device. -->
   <div class="viewer" id="viewer" hidden>
     <a class="skip" href="#v-main">Skip to card</a>
-    <div class="viewer-inner">
-      <header class="viewer-head">
-        <h1 class="h1" id="v-h1">Shared card</h1>
-        <p class="sub" id="v-h1-sub">Digital business card</p>
-      </header>
-      <main id="v-main" tabindex="-1">
-      <div class="stage">
-        <div class="phone">
-          <div class="slot" aria-hidden="true"></div>
-          <div class="screen">
-            <div class="hero" id="v-hero" aria-hidden="true"></div>
-            <div class="card-body">
-              <div class="card-avatar" id="v-initials" aria-hidden="true"></div>
-              <p class="mono"><span class="dot" style="display:inline-block;margin-right:6px" aria-hidden="true"></span>Shared card</p>
-              <p class="card-name" id="v-name"></p>
-              <p class="card-role" id="v-role"></p>
-              <p class="card-bio" id="v-bio"></p>
-              <div class="card-acts">
-                <button type="button" class="btn btn-accent" id="v-save">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>
-                  Save contact
-                </button>
-              </div>
-              <div class="card-rows" id="v-rows"></div>
-              <div class="card-foot">
-                <span class="mono">Powered by</span>
-                <span class="mono">Control Tower</span>
-              </div>
-            </div>
+    <main class="viewer-main" id="v-main" tabindex="-1">
+      <article class="viewer-card">
+        <div class="hero" id="v-hero" aria-hidden="true"></div>
+        <div class="viewer-card-body">
+          <div class="card-avatar" id="v-initials" aria-hidden="true"></div>
+          <h1 class="card-name" id="v-name"></h1>
+          <p class="card-role" id="v-role"></p>
+          <p class="card-bio" id="v-bio"></p>
+          <div class="card-acts">
+            <button type="button" class="btn btn-accent" id="v-save">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>
+              Save contact
+            </button>
           </div>
+          <div class="card-rows" id="v-rows"></div>
         </div>
-      </div>
-      </main>
-      <p class="viewer-note">This card was shared with you. <a href="#" id="v-create">Create your own</a></p>
-    </div>
+      </article>
+    </main>
+    <footer class="viewer-foot">
+      <p class="viewer-note">This card was shared with you · <a href="#" id="v-create">Create your own</a></p>
+    </footer>
   </div>
 
   <div class="viewer-error" id="viewer-error" hidden>
@@ -2470,13 +2524,20 @@
     return s;
   }
 
+  function viewerRowHref(key, value) {
+    if (key === 'email') { return 'mailto:' + value; }
+    if (key === 'phone') { return 'tel:' + value.replace(/\s/g, ''); }
+    if (key === 'website') {
+      var u = value;
+      if (u.indexOf('http://') !== 0 && u.indexOf('https://') !== 0) { u = 'https://' + u; }
+      return u;
+    }
+    return null;
+  }
+
   function renderViewer() {
     var name = fullName(true) || 'Shared card';
     var role = roleLine(true);
-    var h1 = $('#v-h1');
-    if (h1) { h1.textContent = name; }
-    var sub = $('#v-h1-sub');
-    if (sub) { sub.textContent = role || 'Digital business card'; sub.hidden = !role; }
     $('#v-hero').style.background = HERO[state.appearance.theme] || HERO.mint;
     $('#v-initials').textContent = initials();
     $('#v-name').textContent = name;
@@ -2490,8 +2551,16 @@
       var v = pub(r.key);
       if (!v) { return; }
       any = true;
-      var row = document.createElement('p');
+      var href = viewerRowHref(r.key, v);
+      var row = document.createElement(href ? 'a' : 'p');
       row.className = 'card-row';
+      if (href) {
+        row.href = href;
+        if (r.key === 'website') {
+          row.setAttribute('target', '_blank');
+          row.setAttribute('rel', 'noopener noreferrer');
+        }
+      }
       row.innerHTML = '<span class="icontile" aria-hidden="true">' + svg(r.icon, 12) + '</span>';
       var span = document.createElement('span');
       span.textContent = v;
@@ -2528,6 +2597,10 @@
   function enterViewer(data) {
     state = stateFromShared(data);
     hideEditorChrome();
+    if (document.body) {
+      document.body.style.margin = '0';
+      document.body.style.background = '#0B0E10';
+    }
     var err = $('#viewer-error');
     if (err) { err.hidden = true; }
     var v = $('#viewer');
@@ -2546,6 +2619,10 @@
 
   function enterViewerError() {
     hideEditorChrome();
+    if (document.body) {
+      document.body.style.margin = '0';
+      document.body.style.background = '#0B0E10';
+    }
     var v = $('#viewer');
     if (v) { v.hidden = true; }
     var err = $('#viewer-error');
