@@ -605,6 +605,12 @@ html, body {
 }
 #ctv5 .preview-dialog-scroll .panel-preview{position:static;flex:none;max-width:none;}
 
+/* frameless card (mobile preview dialog): full-bleed, header band edge to edge */
+#ctv5 .mcard{background:var(--panel);min-height:100%;display:flex;flex-direction:column;}
+#ctv5 .mcard .hero{width:100%;height:140px;}
+#ctv5 .mcard .hero-img{height:140px;}
+#ctv5 .mcard .card-body{position:relative;z-index:1;padding:0 20px 28px;margin-top:-32px;flex:1 0 auto;}
+
 /* ---------- responsive ---------- */
 /* From 900px up the inline preview column is on screen, so the floating
    "Preview card" button is redundant — hide it (display:none, leaves the
@@ -694,7 +700,13 @@ html, body {
   #ctv5 .topact{width:44px;padding:0;gap:0;}
   #ctv5 .topact .topact-label{display:none;}
   #ctv5 .preview-dialog{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;}
-  #ctv5 .preview-dialog-inner{height:100dvh;}
+  #ctv5 .preview-dialog-inner{height:100dvh;position:relative;}
+  /* the card starts at the top of the viewport; the close floats over it,
+     top right, on a scrim so it reads against the header image. */
+  #ctv5 .preview-dialog-head{position:absolute;top:0;right:0;left:auto;z-index:2;padding:12px;border-bottom:0;background:transparent;}
+  #ctv5 .preview-dialog-head .mono{display:none;}
+  #ctv5 #preview-dialog-close{background:rgba(11,14,16,.55);color:#fff;}
+  #ctv5 .preview-dialog-scroll{padding:0;background:var(--panel);}
 }
 </style>
 
@@ -2093,36 +2105,47 @@ html, body {
         '</div>' +
       '</article>';
     }
+    /* Card body shared by the framed (editor) card and the frameless (bare)
+       card used in the mobile preview dialog. */
+    var body =
+      '<div class="card-body">' +
+        '<img class="card-avatar-img" id="card-photo" alt="" hidden>' +
+        '<div class="card-avatar" id="card-initials" aria-hidden="true">AM</div>' +
+        '<p class="mono"><span class="dot" style="display:inline-block;margin-right:6px" aria-hidden="true"></span>Live profile</p>' +
+        '<p class="card-name" id="card-name">Alex Morgan</p>' +
+        '<p class="card-role" id="card-role">Design Director at Northstar Studio</p>' +
+        '<p class="card-bio" id="card-bio"></p>' +
+        '<div class="card-acts">' +
+          '<button type="button" class="btn btn-accent" id="card-share">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 13a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1"/><path d="M15 11a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/></svg>' +
+            ' Share' +
+          '</button>' +
+          '<button type="button" class="btn" id="card-save">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>' +
+            ' Save' +
+          '</button>' +
+        '</div>' +
+        '<div class="card-rows" id="card-rows"></div>' +
+        '<div class="card-foot">' +
+          '<span class="mono">Powered by</span>' +
+          '<span class="mono">Control Tower</span>' +
+        '</div>' +
+      '</div>';
+
+    var hero = '<div class="hero" id="card-hero" aria-hidden="true"><img class="hero-img" id="card-header-img" alt="" hidden></div>';
+
+    /* frameless card for the mobile preview dialog: no bezel, side buttons or
+       speaker slot are emitted at all. */
+    if (mode === 'bare') {
+      return '<div class="mcard">' + hero + body + '</div>';
+    }
+
+    /* framed handset for the inline preview column (900px and up) */
     return '<div class="stage">' +
       '<div class="phone">' +
         '<span class="nub" aria-hidden="true"></span>' +
         '<div class="slot" aria-hidden="true"></div>' +
-        '<div class="screen">' +
-          '<div class="hero" id="card-hero" aria-hidden="true"><img class="hero-img" id="card-header-img" alt="" hidden></div>' +
-          '<div class="card-body">' +
-            '<img class="card-avatar-img" id="card-photo" alt="" hidden>' +
-            '<div class="card-avatar" id="card-initials" aria-hidden="true">AM</div>' +
-            '<p class="mono"><span class="dot" style="display:inline-block;margin-right:6px" aria-hidden="true"></span>Live profile</p>' +
-            '<p class="card-name" id="card-name">Alex Morgan</p>' +
-            '<p class="card-role" id="card-role">Design Director at Northstar Studio</p>' +
-            '<p class="card-bio" id="card-bio"></p>' +
-            '<div class="card-acts">' +
-              '<button type="button" class="btn btn-accent" id="card-share">' +
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 13a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1"/><path d="M15 11a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/></svg>' +
-                ' Share' +
-              '</button>' +
-              '<button type="button" class="btn" id="card-save">' +
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>' +
-                ' Save' +
-              '</button>' +
-            '</div>' +
-            '<div class="card-rows" id="card-rows"></div>' +
-            '<div class="card-foot">' +
-              '<span class="mono">Powered by</span>' +
-              '<span class="mono">Control Tower</span>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
+        '<div class="screen">' + hero + body + '</div>' +
       '</div>' +
     '</div>';
   }
@@ -3099,31 +3122,53 @@ html, body {
     if (!panel || !panels || !dialog || !scroll || !closeBtn) { return; }
 
     var mq = window.matchMedia('(max-width:899.98px)');
+    var bareMounted = false;
 
-    function toInline() { if (panel.parentNode !== panels) { panels.appendChild(panel); } }
-    function toDialog() { if (panel.parentNode !== scroll) { scroll.appendChild(panel); } }
-
-    /* Resting home while the dialog is closed: the inline sticky column at
-       >=900px, or — on mobile, where there is no inline column — parked in the
-       closed dialog. The single card node keeps its #card-* ids and its
-       renderPreview() wiring wherever it lives. */
-    function rest() { if (mq.matches) { toDialog(); } else { toInline(); } }
-
-    if (mq.addEventListener) { mq.addEventListener('change', function () { if (!dialog.open) { rest(); } }); }
-    else if (mq.addListener) { mq.addListener(function () { if (!dialog.open) { rest(); } }); } /* older Safari */
-    rest();
-
-    /* Native <dialog>.showModal(): focus trap, Escape-to-close, and focus
-       restored to whichever button opened it — all for free. The dialog body
-       is its own scroll container, and opening does not scroll the page, so
-       the form's scroll position is preserved. */
-    function openPreview() {
-      toDialog();
-      if (typeof dialog.showModal === 'function') { dialog.showModal(); }
-      else { dialog.setAttribute('open', ''); } /* fallback: no focus trap, but visible */
+    /* Below 900px the dialog IS the card: a frameless card rendered by
+       buildCardMarkup('bare') — the bezel/side buttons/speaker slot are never
+       emitted. The framed handset panel is detached from the document so its
+       #card-* ids don't collide with the bare card's. At 900px and up the
+       handset panel is used exactly as before. */
+    function mountBare() {
+      if (bareMounted) { return; }
+      scroll.innerHTML = buildCardMarkup('bare');
+      var sh = scroll.querySelector('#card-share');
+      if (sh) { sh.addEventListener('click', function (ev) { openShare(ev.currentTarget); }); }
+      var sv = scroll.querySelector('#card-save');
+      if (sv) { sv.addEventListener('click', function () { downloadVcf(); }); }
+      bareMounted = true;
+    }
+    function unmountBare() {
+      if (!bareMounted) { return; }
+      scroll.innerHTML = '';
+      bareMounted = false;
     }
 
-    dialog.addEventListener('close', rest);            /* Escape or close() -> re-home the card */
+    function place() {
+      if (mq.matches) {
+        if (panel.parentNode) { panel.parentNode.removeChild(panel); } /* frame out of the DOM */
+        mountBare();
+      } else {
+        unmountBare();
+        if (dialog.open) { if (panel.parentNode !== scroll) { scroll.appendChild(panel); } }
+        else if (panel.parentNode !== panels) { panels.appendChild(panel); }
+      }
+      renderPreview();
+    }
+
+    if (mq.addEventListener) { mq.addEventListener('change', place); }
+    else if (mq.addListener) { mq.addListener(place); } /* older Safari */
+    place();
+
+    /* Native <dialog>.showModal(): focus trap, Escape-to-close, focus restored
+       to the opener. Opening does not scroll the page. */
+    function openPreview() {
+      if (!mq.matches && panel.parentNode !== scroll) { scroll.appendChild(panel); } /* desktop: framed handset into the dialog */
+      if (typeof dialog.showModal === 'function') { dialog.showModal(); }
+      else { dialog.setAttribute('open', ''); }
+    }
+
+    dialog.addEventListener('close', place);           /* Escape or close() -> re-home */
     closeBtn.addEventListener('click', function () { dialog.close(); });
     openers.forEach(function (btn) {
       if (btn) { btn.addEventListener('click', function () { openPreview(); }); }
