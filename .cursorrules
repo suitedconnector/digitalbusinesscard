@@ -1,0 +1,21 @@
+ONE self-contained index.html. No build step, npm, bundler, TypeScript, JSX,
+frameworks, or CDN scripts. Vanilla ES2019. All CSS and JS inline.
+It must paste into a DotNetNuke HTML module.
+Scope every CSS rule under #ctv5. Never write rules for :root, html, body or *.
+No !important. If a rule seems to need it, the selector is wrong.
+No server ever receives card data. No analytics SDK, no QR web service, no
+database. Share payloads ride in the URL fragment (#p=), never a query string.
+
+PALETTE - exact values, do not substitute Tailwind or shadcn defaults:
+--page #0B0E10  --sidebar #0D1114  --panel #101417  --field #0D1215
+--divider #1E292D (decorative only)  --control #556772 (input/button borders)
+--text #E8EEEB  --muted #78868E  --accent #72A7FF  --ink #0B0E10  --active #131C2D
+#58656A and #1E292D fail WCAG contrast. That is why these values exist.
+
+ACCESSIBILITY - WCAG 2.1 AA, not optional:
+Focus = 2px solid #CFE2FF at 2px offset PLUS a 2px #0B0E10 inner ring via
+box-shadow. The inner ring keeps it visible on accent buttons.
+Never style :hover and :focus-visible in the same rule.
+Never outline:none without a replacement.
+Real <label for> on every input. <nav> with aria-current. Skip link to <main>.
+Targets 44px minimum. Body text 4.5:1, control borders 3:1.

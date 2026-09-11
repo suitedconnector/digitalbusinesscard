@@ -372,9 +372,24 @@
 }
 #ctv5 .viewer[hidden]{display:none;}
 #ctv5 .viewer-inner{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;}
+#ctv5 .viewer-head{
+  text-align:center;max-width:520px;width:100%;
+  display:flex;flex-direction:column;gap:8px;
+}
+#ctv5 .viewer-head .sub{max-width:42ch;margin:0 auto;}
 #ctv5 .viewer-note{font-size:12.5px;color:var(--muted);text-align:center;}
 #ctv5 .viewer-note a{color:var(--accent);text-decoration:none;font-weight:600;}
 #ctv5 .viewer-note a:hover{text-decoration:underline;}
+#ctv5 .viewer-error{
+  min-height:100vh;background:var(--page);
+  display:flex;align-items:center;justify-content:center;padding:32px 16px;
+}
+#ctv5 .viewer-error[hidden]{display:none;}
+#ctv5 .viewer-error-main{
+  max-width:480px;text-align:center;display:flex;flex-direction:column;gap:12px;
+}
+#ctv5 .qr-omit{font-size:12px;color:var(--muted);text-align:center;max-width:42ch;}
+#ctv5 .qr-omit[hidden]{display:none;}
 #ctv5 .actrow{
   display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:12px 14px;
   background:var(--field);border:1px solid var(--divider);border-radius:10px;
@@ -808,7 +823,13 @@
        the shared card's public text rides in the URL fragment, which the
        browser never sends to any server. Photos stay on the sender's device. -->
   <div class="viewer" id="viewer" hidden>
+    <a class="skip" href="#v-main">Skip to card</a>
     <div class="viewer-inner">
+      <header class="viewer-head">
+        <h1 class="h1" id="v-h1">Shared card</h1>
+        <p class="sub" id="v-h1-sub">Digital business card</p>
+      </header>
+      <main id="v-main" tabindex="-1">
       <div class="stage">
         <div class="phone">
           <div class="slot" aria-hidden="true"></div>
@@ -835,8 +856,16 @@
           </div>
         </div>
       </div>
+      </main>
       <p class="viewer-note">This card was shared with you. <a href="#" id="v-create">Create your own</a></p>
     </div>
+  </div>
+
+  <div class="viewer-error" id="viewer-error" hidden>
+    <main id="viewer-error-main" tabindex="-1">
+      <h1 class="h1">Link incomplete</h1>
+      <p class="sub">This link is incomplete.</p>
+    </main>
   </div>
 
   <!-- ===================== SHARE MODAL ===================== -->
@@ -861,12 +890,12 @@
         </span>
       </div>
 
-      <!-- QR encodes the contact as a vCard; scanning it adds the contact.
-           The code is decorative only because the same details are present as
-           real text below it. The two are kept together and never shipped apart. -->
+      <!-- QR encodes the share URL; scanning it opens the read-only card.
+           The URL is also shown as real selectable text beneath the code. -->
       <div class="share-qr">
         <div class="qrtile" id="qr-tile"></div>
-        <p class="qr-url"><span class="sr">Contact details in this code: </span><span id="qr-url-text">Scan to add contact</span></p>
+        <p class="qr-url"><span class="sr">Share link in this code: </span><span id="qr-url-text">Scan to open card</span></p>
+        <p class="qr-omit" id="qr-omit-note" hidden></p>
         <div class="share-qr-btns">
           <button type="button" class="btn" id="qr-copy">Copy details</button>
           <button type="button" class="btn" id="qr-png" aria-label="Download QR code as a PNG image">Download PNG</button>
@@ -1228,6 +1257,22 @@
     { key: 'location',  group: 'reach',    label: 'Location',    span: 2, auto: 'address-level2' },
     { key: 'bio',       group: 'reach',    label: 'Bio',         span: 2, tag: 'textarea' }
   ];
+
+  /* Short keys for the #p= payload — public text fields only, no images. */
+  var PAYLOAD_OUT = {
+    firstName: 'fn', lastName: 'ln', role: 'r', company: 'c',
+    email: 'e', phone: 'p', website: 'w', location: 'l', bio: 'b'
+  };
+  var PAYLOAD_IN = {
+    fn: 'firstName', ln: 'lastName', r: 'role', c: 'company',
+    e: 'email', p: 'phone', w: 'website', l: 'location', b: 'bio'
+  };
+  var THEME_OUT = { mint: 'm', slate: 's', classic: 'c' };
+  var THEME_IN = { m: 'mint', s: 'slate', c: 'classic' };
+  var QR_OMIT_PRIORITY = ['bio', 'location'];
+  var SHARE_BASE = location.href.split('#')[0];
+  var lastFullShare = { url: SHARE_BASE + '#p=', fragment: '' };
+  var lastQrShare = { url: '', fragment: '', note: '' };
 
   var SEED = {
     firstName: 'Alex',
@@ -1872,8 +1917,7 @@
       host.appendChild(none);
     }
 
-    $('#profile-url').textContent = shareLink();
-    $('#share-url').textContent = shareLink();
+    refreshFullShareLink();
 
     var total = FIELDS.length + MEDIA.length;
     var open = FIELDS.filter(function (f) { return isPublic(f.key); }).length +
@@ -2095,8 +2139,6 @@
      ========================================================== */
   function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/([,;])/g, '\\$1').replace(/\r?\n/g, '\\n'); }
 
-  /* compact=true drops the bio NOTE so the QR-encoded card stays small and
-     easy to scan; the downloaded .vcf still carries everything. */
   function buildVCard(compact) {
     var lines = ['BEGIN:VCARD', 'VERSION:3.0'];
     var first = pub('firstName'), last = pub('lastName');
@@ -2145,34 +2187,23 @@
   }
 
   /* ==========================================================
-     QR CODE — encodes the public contact card as a vCard, so a scan adds
-     the contact directly. No URL, no server: the card never leaves the
-     device. Inline SVG, dark modules on a white tile with a 4-module quiet
-     zone. Not inverted for the dark theme: light-on-dark codes fail on some
+     QR CODE — encodes the share URL so a scan opens the read-only card.
+     Inline SVG, dark modules on a white tile with a 4-module quiet zone.
+     Not inverted for the dark theme: light-on-dark codes fail on some
      scanners, and this must work on a stranger's phone.
      ========================================================== */
   function escAttr(s) {
     return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  /* The human-readable equivalent of the QR, shown as real selectable text
-     directly beneath it — the QR itself is only ever decorative. */
-  function contactText() {
-    var parts = [];
-    var name = fullName(true);
-    var role = roleLine(true);
-    if (name) { parts.push(name); }
-    if (role) { parts.push(role); }
-    if (pub('email')) { parts.push(pub('email')); }
-    if (pub('phone')) { parts.push(pub('phone')); }
-    if (pub('website')) { parts.push(pub('website')); }
-    if (pub('location')) { parts.push(pub('location')); }
-    return parts.join('\n');
+  function fieldLabel(key) {
+    var f = FIELD_BY_KEY[key];
+    return f ? f.label : key;
   }
 
-  function qrLabel() {
-    return 'QR code with the contact details for ' + (fullName(true) || 'this card') +
-      '. Scanning it adds the contact.';
+  function qrLabel(url) {
+    return 'QR code linking to the digital card for ' + (fullName(true) || 'this contact') +
+      '. Scan to open the card.';
   }
 
   function qrSvg(payload, px, label) {
@@ -2193,18 +2224,31 @@
 
   function renderShareQR() {
     var tile = $('#qr-tile');
+    var noteEl = $('#qr-omit-note');
+    var urlEl = $('#qr-url-text');
     if (!tile) { return; }
-    try { tile.innerHTML = qrSvg(buildVCard(true), 180, qrLabel()); }
-    catch (e) { tile.textContent = 'QR unavailable for this card.'; }
-    var text = contactText();
-    $('#qr-url-text').textContent = text || 'No public details to share yet. Open an eye toggle to add one.';
+    tile.textContent = 'Building QR…';
+    if (noteEl) { noteEl.hidden = true; noteEl.textContent = ''; }
+    computeShareForQR().then(function (result) {
+      tile.innerHTML = qrSvg(result.url, 180, qrLabel(result.url));
+      if (urlEl) { urlEl.textContent = result.url; }
+      if (noteEl) {
+        if (result.note) { noteEl.textContent = result.note; noteEl.hidden = false; }
+        else { noteEl.hidden = true; noteEl.textContent = ''; }
+      }
+    }).catch(function () {
+      tile.textContent = 'QR unavailable for this card.';
+      if (urlEl) { urlEl.textContent = 'No public details to share yet. Open an eye toggle to add one.'; }
+      if (noteEl) { noteEl.hidden = true; }
+    });
   }
 
   /* Draw the same SVG to a 1024x1024 canvas and save it as a PNG Blob.
      No library, no server: the SVG is a same-origin blob with no external
      references, so the canvas never taints and this works from file://. */
   function downloadQrPng() {
-    var svg = qrSvg(buildVCard(true), 1024, qrLabel());
+    var url = lastQrShare.url || shareLink();
+    var svg = qrSvg(url, 1024, qrLabel(url));
     var objurl;
     try { objurl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })); }
     catch (e) { toast('This browser blocked the download.'); return; }
@@ -2237,19 +2281,20 @@
   }
 
   function downloadQrSvg() {
-    if (download(fileBase() + '-contact-qr.svg', qrSvg(buildVCard(true), 1024, qrLabel()), 'image/svg+xml;charset=utf-8')) {
+    var url = lastQrShare.url || shareLink();
+    if (download(fileBase() + '-contact-qr.svg', qrSvg(url, 1024, qrLabel(url)), 'image/svg+xml;charset=utf-8')) {
       toast('QR code SVG downloaded.');
     }
   }
 
   /* ==========================================================
      SHAREABLE LINK — a self-contained #p= fragment holding the public
-     text card. The fragment never leaves the browser (it is not sent in
-     the HTTP request), so the card stays private to whoever holds the link.
-     Photos are not included: they stay on the sender's device.
+     text card. Short keys, no images. Compressed with deflate-raw when
+     the browser supports it; raw JSON otherwise. The fragment never leaves
+     the browser (it is not sent in the HTTP request).
      ========================================================== */
   function b64urlEncode(str) {
-    var bin = window.unescape(encodeURIComponent(str)); /* UTF-8 -> binary string */
+    var bin = window.unescape(encodeURIComponent(str));
     return window.btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
@@ -2259,23 +2304,155 @@
     return decodeURIComponent(window.escape(window.atob(s)));
   }
 
-  function encodePublicCard() {
-    var f = {};
-    FIELDS.forEach(function (fld) {
-      var v = pub(fld.key);
-      if (v) { f[fld.key] = v; }
-    });
-    return b64urlEncode(JSON.stringify({ v: 1, t: state.appearance.theme, f: f }));
+  function b64urlFromBytes(bytes) {
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) { bin += String.fromCharCode(bytes[i]); }
+    return window.btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
-  function decodePublicCard(s) {
-    var data = JSON.parse(b64urlDecode(s));
-    if (!data || typeof data !== 'object' || typeof data.f !== 'object') { return null; }
-    return data;
+  function b64urlToBytes(s) {
+    s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) { s += '='; }
+    var bin = window.atob(s);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) { out[i] = bin.charCodeAt(i); }
+    return out;
+  }
+
+  function compressRaw(str) {
+    if (!window.CompressionStream) { return Promise.resolve(null); }
+    try {
+      var stream = new Blob([str]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+      return new Response(stream).arrayBuffer().then(function (buf) {
+        return new Uint8Array(buf);
+      }).catch(function () { return null; });
+    } catch (e) { return Promise.resolve(null); }
+  }
+
+  function decompressRaw(bytes) {
+    if (!window.DecompressionStream) { return Promise.reject(new Error('no decompress')); }
+    var stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Response(stream).text();
+  }
+
+  function buildPublicPayload(omit) {
+    omit = omit || [];
+    var out = { v: 1 };
+    var theme = state.appearance.theme;
+    if (THEMES.indexOf(theme) > -1) { out.t = THEME_OUT[theme] || theme; }
+    FIELDS.forEach(function (fld) {
+      if (omit.indexOf(fld.key) > -1) { return; }
+      var v = pub(fld.key);
+      if (v) { out[PAYLOAD_OUT[fld.key]] = v; }
+    });
+    return out;
+  }
+
+  function shareFragmentSync(omit) {
+    return 'r' + b64urlEncode(JSON.stringify(buildPublicPayload(omit)));
+  }
+
+  function shareFragmentAsync(omit) {
+    var json = JSON.stringify(buildPublicPayload(omit));
+    return compressRaw(json).then(function (bytes) {
+      if (bytes && bytes.length < json.length) {
+        return 'z' + b64urlFromBytes(bytes);
+      }
+      return 'r' + b64urlEncode(json);
+    });
+  }
+
+  function normalizePayload(data) {
+    if (!data || typeof data !== 'object') { return null; }
+    var out = { v: data.v || 1, t: 'mint', f: {} };
+    if (typeof data.t === 'string') {
+      if (THEME_IN[data.t]) { out.t = THEME_IN[data.t]; }
+      else if (THEMES.indexOf(data.t) > -1) { out.t = data.t; }
+    }
+    Object.keys(PAYLOAD_IN).forEach(function (short) {
+      if (typeof data[short] === 'string' && data[short]) {
+        out.f[PAYLOAD_IN[short]] = data[short].slice(0, 600);
+      }
+    });
+    if (data.f && typeof data.f === 'object') {
+      Object.keys(data.f).forEach(function (k) {
+        var v = data.f[k];
+        if (typeof v !== 'string' || !v) { return; }
+        if (PAYLOAD_IN[k]) { out.f[PAYLOAD_IN[k]] = v.slice(0, 600); }
+        else if (FIELD_BY_KEY[k]) { out.f[k] = v.slice(0, 600); }
+      });
+    }
+    if (!Object.keys(out.f).length) { return null; }
+    return out;
+  }
+
+  function decodePublicCardAsync(s) {
+    if (!s) { return Promise.resolve(null); }
+    if (s.charAt(0) === 'z') {
+      return decompressRaw(b64urlToBytes(s.slice(1))).then(function (raw) {
+        return normalizePayload(JSON.parse(raw));
+      }).catch(function () { return null; });
+    }
+    try {
+      var raw = s.charAt(0) === 'r' ? b64urlDecode(s.slice(1)) : b64urlDecode(s);
+      return Promise.resolve(normalizePayload(JSON.parse(raw)));
+    } catch (e) { return Promise.resolve(null); }
+  }
+
+  function computeShareForQR() {
+    var omit = [];
+    function attempt() {
+      return shareFragmentAsync(omit).then(function (frag) {
+        var url = SHARE_BASE + '#p=' + frag;
+        var ver;
+        try { ver = CTQR.build(url).ver; }
+        catch (e) { return Promise.reject(e); }
+        if (ver > 20) {
+          var dropped = null;
+          for (var i = 0; i < QR_OMIT_PRIORITY.length; i++) {
+            var k = QR_OMIT_PRIORITY[i];
+            if (omit.indexOf(k) === -1 && pub(k)) { dropped = k; break; }
+          }
+          if (!dropped) { return Promise.reject(new Error('QR too large')); }
+          omit.push(dropped);
+          return attempt();
+        }
+        return decodePublicCardAsync(frag).then(function (decoded) {
+          if (!decoded) { return Promise.reject(new Error('decode failed')); }
+          var note = '';
+          if (omit.length) {
+            note = 'QR code omits ' + omit.map(fieldLabel).join(' and ') +
+              ' to stay scannable. Open the link for the full card.';
+          }
+          lastQrShare = { url: url, fragment: frag, note: note, omit: omit.slice() };
+          return lastQrShare;
+        });
+      });
+    }
+    return attempt();
+  }
+
+  function refreshFullShareLink() {
+    return shareFragmentAsync([]).then(function (frag) {
+      lastFullShare = { fragment: frag, url: SHARE_BASE + '#p=' + frag };
+      updateShareUrlDisplays(lastFullShare.url);
+      return lastFullShare;
+    }).catch(function () {
+      lastFullShare = { fragment: shareFragmentSync([]), url: SHARE_BASE + '#p=' + shareFragmentSync([]) };
+      updateShareUrlDisplays(lastFullShare.url);
+      return lastFullShare;
+    });
+  }
+
+  function updateShareUrlDisplays(url) {
+    var p = $('#profile-url');
+    var s = $('#share-url');
+    if (p) { p.textContent = url; }
+    if (s) { s.textContent = url; }
   }
 
   function shareLink() {
-    return location.href.split('#')[0] + '#p=' + encodePublicCard();
+    return lastFullShare.url || (SHARE_BASE + '#p=' + shareFragmentSync([]));
   }
 
   /* ==========================================================
@@ -2294,10 +2471,15 @@
   }
 
   function renderViewer() {
+    var name = fullName(true) || 'Shared card';
+    var role = roleLine(true);
+    var h1 = $('#v-h1');
+    if (h1) { h1.textContent = name; }
+    var sub = $('#v-h1-sub');
+    if (sub) { sub.textContent = role || 'Digital business card'; sub.hidden = !role; }
     $('#v-hero').style.background = HERO[state.appearance.theme] || HERO.mint;
     $('#v-initials').textContent = initials();
-    $('#v-name').textContent = fullName(true) || 'Private profile';
-    var role = roleLine(true);
+    $('#v-name').textContent = name;
     var rEl = $('#v-role'); rEl.textContent = role; rEl.hidden = !role;
     var bio = pub('bio'); var bEl = $('#v-bio'); bEl.textContent = bio; bEl.hidden = !bio;
 
@@ -2324,28 +2506,53 @@
     }
   }
 
-  function parseSharedHash() {
-    var m = (window.location.hash || '').match(/[#&]p=([^&]+)/);
-    if (!m) { return null; }
-    try { return decodePublicCard(m[1]); }
-    catch (e) { return null; }
+  function isViewerHash() {
+    return (window.location.hash || '').indexOf('#p=') === 0;
+  }
+
+  function parseSharedHashAsync() {
+    var hash = window.location.hash || '';
+    if (hash.indexOf('#p=') !== 0) { return Promise.resolve(null); }
+    var payload = hash.slice(3);
+    if (!payload) { return Promise.resolve(null); }
+    return decodePublicCardAsync(payload);
+  }
+
+  function hideEditorChrome() {
+    var shell = $('.shell');
+    if (shell) { shell.hidden = true; }
+    var modal = $('#share-modal');
+    if (modal) { modal.hidden = true; }
   }
 
   function enterViewer(data) {
     state = stateFromShared(data);
-    var shell = $('.shell');
-    if (shell) { shell.hidden = true; }
+    hideEditorChrome();
+    var err = $('#viewer-error');
+    if (err) { err.hidden = true; }
     var v = $('#viewer');
     v.hidden = false;
     renderViewer();
     $('#v-save').addEventListener('click', function () { downloadVcf(); });
     $('#v-create').addEventListener('click', function (ev) {
       ev.preventDefault();
-      var base = location.href.split('#')[0];
-      window.location.href = base;
+      window.location.href = SHARE_BASE;
       window.location.reload();
     });
     document.title = (fullName(true) || 'Shared card') + ' — Control Tower';
+    var main = $('#v-main');
+    if (main) { main.focus(); }
+  }
+
+  function enterViewerError() {
+    hideEditorChrome();
+    var v = $('#viewer');
+    if (v) { v.hidden = true; }
+    var err = $('#viewer-error');
+    if (err) { err.hidden = false; }
+    document.title = 'Link incomplete — Control Tower';
+    var main = $('#viewer-error-main');
+    if (main) { main.focus(); }
   }
 
   /* ==========================================================
@@ -2457,8 +2664,12 @@
   $('#card-save').addEventListener('click', function () { downloadVcf(); });
 
   $('#qr-copy').addEventListener('click', function () {
-    var text = contactText();
-    if (text) { copyText(text); } else { toast('No public details to copy yet.'); }
+    var text = lastQrShare.url || shareLink();
+    if (text && text.indexOf('#p=') > -1 && text.slice(-3) !== '#p=') {
+      copyText(text);
+    } else {
+      toast('No public details to share yet. Open an eye toggle to add one.');
+    }
   });
   $('#qr-png').addEventListener('click', function () { downloadQrPng(); });
   $('#qr-svg').addEventListener('click', function () { downloadQrSvg(); });
@@ -2527,18 +2738,20 @@
     renderStorageWarning();
   }
 
-  var shared = parseSharedHash();
-  if (shared) {
-    /* Opened from a share link: show the read-only card, never the editor,
-       and never touch this browser's own stored profile. */
-    enterViewer(shared);
+  if (isViewerHash()) {
+    /* Opened from a share link: show the read-only card or a plain error,
+       never the editor, and never touch this browser's stored profile. */
+    parseSharedHashAsync().then(function (shared) {
+      if (shared) { enterViewer(shared); }
+      else { enterViewerError(); }
+    });
   } else {
     buildFields();
     renderAll();
     route(false);
 
     store.load().then(function (loaded) {
-      if (dirty) { return; } /* user got there first; keep their edits */
+      if (dirty) { return; }
       state = loaded;
       renderAll();
     }).catch(function () { /* defaults already rendered */ });
