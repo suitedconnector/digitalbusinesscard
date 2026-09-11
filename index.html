@@ -18,7 +18,7 @@
   --control:#556772;
   --text:#E8EEEB;
   --muted:#78868E;
-  --accent:#72A7FF;
+  --accent:#2888F0; /* CONTROL TOWER logo blue */
   --ink:#0B0E10;
   --active:#131C2D;
   --hero:linear-gradient(160deg,#18284C,#10192D);
@@ -80,7 +80,7 @@
 }
 #ctv5 .btn:hover{background:#161C20;border-color:#6C7F8A;}
 #ctv5 .btn-accent{background:var(--accent);border-color:var(--accent);color:var(--ink);font-weight:600;}
-#ctv5 .btn-accent:hover{background:#8DB8FF;border-color:#8DB8FF;}
+#ctv5 .btn-accent:hover{background:#4A9EF4;border-color:#4A9EF4;}
 #ctv5 .btn-icon{width:44px;height:44px;padding:0;}
 #ctv5 .btn[aria-disabled="true"]{opacity:.6;cursor:not-allowed;}
 @media (prefers-reduced-motion:reduce){
@@ -553,8 +553,7 @@
 #ctv5 .hero-img{display:block;width:100%;height:104px;object-fit:cover;}
 #ctv5 .hero-img[hidden]{display:none;}
 
-/* ---------- mobile preview button + dialog (editor, <900px) ---------- */
-#ctv5 .mobile-preview-btn{display:none;}
+/* ---------- card-preview dialog (editor) ---------- */
 #ctv5 .preview-dialog{
   padding:0;border:none;background:transparent;color:var(--text);
   width:100%;max-width:100%;max-height:100%;
@@ -606,9 +605,8 @@
 }
 /* below 900px: sidebar becomes a fixed bottom tab bar; the main area is a
    single column; the preview leaves the flow and opens in the dialog.
-   Bottom-clearance math (so neither the Preview button nor the tab bar ever
-   covers a field): tab bar 56 + gap 12 + Preview button 48 + gap 12 = 128px,
-   plus the safe-area inset. */
+   Bottom-clearance math (so the fixed tab bar never covers a field):
+   tab bar 56 + breathing gap 12 = 68px, plus the safe-area inset. */
 @media (max-width:899.98px){
   #ctv5 .shell{display:block;}
   #ctv5 .sidebar{
@@ -634,7 +632,7 @@
   #ctv5 .sidebar nav.nav .badge{display:none;}
   #ctv5 .col{min-height:100vh;}
   #ctv5 #ctv5-main{
-    padding:20px 14px calc(128px + env(safe-area-inset-bottom,0px)) 14px;
+    padding:20px 14px calc(68px + env(safe-area-inset-bottom,0px)) 14px;
   }
   #ctv5 .panels{display:block;}
   #ctv5 .panel-details{width:100%;}
@@ -645,11 +643,6 @@
   #ctv5 .f{grid-column:1 / -1;}
   #ctv5 .topbar{height:auto;min-height:56px;flex-wrap:wrap;padding:8px 14px;}
   #ctv5 .topbar-right{margin-left:0;}
-  #ctv5 .mobile-preview-btn{
-    display:inline-flex;position:fixed;left:16px;right:16px;
-    bottom:calc(68px + env(safe-area-inset-bottom,0px));
-    height:48px;z-index:41;box-shadow:0 8px 24px rgba(0,0,0,.4);
-  }
   #ctv5 .preview-dialog{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;}
   #ctv5 .preview-dialog-inner{height:100dvh;}
 }
@@ -734,9 +727,13 @@
           <button type="button" class="btn btn-icon" id="search-btn" aria-label="Search workspace">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           </button>
-          <button type="button" class="btn" id="preview-btn">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-            Preview card
+          <button type="button" class="btn" id="export-btn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>
+            Export
+          </button>
+          <button type="button" class="btn btn-accent" id="save-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="m14 6 4 4"/></svg>
+            Save changes
           </button>
           <span class="avatar" id="top-initials" aria-hidden="true">AM</span>
         </div>
@@ -753,13 +750,9 @@
               <p class="sub">Control what people see when they connect with you.</p>
             </div>
             <div class="pagehead-act">
-              <button type="button" class="btn" id="export-btn">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>
-                Export
-              </button>
-              <button type="button" class="btn btn-accent" id="save-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="m14 6 4 4"/></svg>
-                Save changes
+              <button type="button" class="btn btn-accent" id="preview-btn">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                Preview card
               </button>
             </div>
           </div>
@@ -863,7 +856,7 @@
               <p class="panel-sub">Make it unmistakably yours.</p>
               <div class="chips" role="radiogroup" aria-label="Card appearance">
                 <button type="button" class="chip" role="radio" data-theme="mint" aria-checked="false">
-                  <span class="swatch" style="background:#72A7FF" aria-hidden="true"></span>Mint<span class="check" hidden aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></span></button>
+                  <span class="swatch" style="background:#2888F0" aria-hidden="true"></span>Mint<span class="check" hidden aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></span></button>
                 <button type="button" class="chip" role="radio" data-theme="slate" aria-checked="false">
                   <span class="swatch" style="background:#8A9AA5" aria-hidden="true"></span>Slate<span class="check" hidden aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></span></button>
                 <button type="button" class="chip" role="radio" data-theme="classic" aria-checked="false">
@@ -974,12 +967,8 @@
 
       </main>
 
-      <!-- Editor-only, below 900px: fixed above the bottom tab bar. Opens the
-           preview card in a native <dialog> (focus trap + Escape for free). -->
-      <button type="button" class="btn btn-accent mobile-preview-btn" id="mobile-preview-btn" aria-haspopup="dialog">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-        Preview
-      </button>
+      <!-- Card preview dialog (native <dialog>: focus trap + Escape for free).
+           Opened by the Preview button in the page header. -->
       <dialog class="preview-dialog" id="preview-dialog" aria-label="Card preview">
         <div class="preview-dialog-inner">
           <div class="preview-dialog-head">
@@ -3021,9 +3010,9 @@
     var dialog = $('#preview-dialog');
     var scroll = $('#preview-dialog-scroll');
     var closeBtn = $('#preview-dialog-close');
-    /* Both Preview buttons open this dialog: the topbar "Preview card" and the
-       mobile-only fixed "Preview". Neither uses openShare — Share is separate. */
-    var openers = [$('#preview-btn'), $('#mobile-preview-btn')];
+    /* The Preview button in the page header opens this dialog. It does not
+       use openShare — Preview and Share are separate. */
+    var openers = [$('#preview-btn')];
     if (!panel || !panels || !dialog || !scroll || !closeBtn) { return; }
 
     var mq = window.matchMedia('(max-width:899.98px)');
