@@ -3,6 +3,7 @@
      Single-file DNN HTML module block. No build step, no CDN JS.
      All CSS + JS scoped under #ctv5.
      ============================================================ -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -176,12 +177,20 @@
 #ctv5 .pagehead-act{display:flex;gap:10px;flex-wrap:wrap;}
 
 /* ---------- panels ---------- */
-#ctv5 .panels{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;}
+/* Two columns from 900px up: form flexes, preview is a fixed 420px (380px on
+   the icon-rail range) sticky rail. Below 900px the preview leaves the flow
+   and opens in a dialog — see the responsive section. Every flex/grid child
+   carries min-width:0 so a long value can never push past the viewport. */
+#ctv5 .panels{display:flex;gap:18px;align-items:flex-start;}
 #ctv5 .panel{
   background:var(--panel);border:1px solid var(--divider);border-radius:12px;padding:20px;
 }
-#ctv5 .panel-details{flex:1 1 420px;min-width:0;}
-#ctv5 .panel-preview{flex:0 0 452px;max-width:100%;}
+#ctv5 .panel-details{flex:1 1 auto;min-width:0;}
+#ctv5 .panel-preview{
+  flex:0 0 420px;max-width:100%;min-width:0;
+  position:sticky;top:20px;align-self:flex-start;
+}
+#ctv5 .fields>*{min-width:0;}
 #ctv5 .panel-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;}
 #ctv5 .panel-head-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
 #ctv5 .panel-title{font-size:16px;font-weight:600;letter-spacing:-.01em;}
@@ -376,15 +385,15 @@
 #ctv5 .viewer main{
   flex:1 0 auto;width:100%;min-width:0;
   display:flex;flex-direction:column;
-  padding:0;margin:0;
+  padding:0;margin:0;border:none;
 }
 #ctv5 .viewer-card{
-  width:100%;background:var(--panel);
-  border:none;border-radius:0;margin:0;
+  width:100%;max-width:none;background:var(--panel);
+  border:none;border-radius:0;margin:0;padding:0;
   flex:1 0 auto;display:flex;flex-direction:column;
 }
 #ctv5 .viewer .hero{
-  flex:none;height:104px;background:var(--hero);margin:0;border-radius:0;
+  flex:none;width:100%;height:104px;background:var(--hero);margin:0;border:none;border-radius:0;
 }
 #ctv5 .viewer-card-body{
   position:relative;z-index:1;padding:0 16px 24px;margin-top:-32px;
@@ -441,7 +450,7 @@
     padding:48px 24px 24px;
   }
   #ctv5 .viewer-card{
-    flex:0 0 auto;max-width:420px;
+    flex:0 0 auto;width:100%;max-width:420px;margin:0 auto;
     border:1px solid var(--divider);border-radius:12px;overflow:hidden;
   }
   #ctv5 .viewer-card-body{
@@ -544,24 +553,105 @@
 #ctv5 .hero-img{display:block;width:100%;height:104px;object-fit:cover;}
 #ctv5 .hero-img[hidden]{display:none;}
 
-/* ---------- responsive ---------- */
-@media (max-width:1180px){
-  #ctv5 .panel-preview{flex:1 1 380px;}
+/* ---------- mobile preview button + dialog (editor, <900px) ---------- */
+#ctv5 .mobile-preview-btn{display:none;}
+#ctv5 .preview-dialog{
+  padding:0;border:none;background:transparent;color:var(--text);
+  width:100%;max-width:100%;max-height:100%;
 }
-@media (max-width:860px){
-  #ctv5 .shell{flex-direction:column;}
-  #ctv5 .sidebar{width:auto;position:static;height:auto;min-height:0;border-right:0;border-bottom:1px solid var(--divider);}
-  #ctv5 .spacer{display:none;}
+#ctv5 .preview-dialog::backdrop{background:rgba(5,8,10,.78);}
+#ctv5 .preview-dialog-inner{
+  background:var(--panel);display:flex;flex-direction:column;min-height:0;
+}
+#ctv5 .preview-dialog-head{
+  flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 16px;border-bottom:1px solid var(--divider);
+}
+/* the dialog owns its own scroll so a card taller than the viewport still
+   scrolls to the bottom, clear of the safe area */
+#ctv5 .preview-dialog-scroll{
+  flex:1 1 auto;min-height:0;overflow-y:auto;
+  padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
+}
+#ctv5 .preview-dialog-scroll .panel-preview{position:static;flex:none;max-width:none;}
+
+/* ---------- responsive ---------- */
+/* 900–1199px: sidebar collapses to a 72px icon rail. Labels are never removed
+   from the DOM (they stay the links' accessible name); they surface as a
+   flyout on hover/focus. Preview column narrows to 380px. */
+@media (min-width:900px) and (max-width:1199.98px){
+  #ctv5 .sidebar{width:72px;padding:18px 0;align-items:center;gap:14px;overflow:visible;}
+  #ctv5 .sidebar .logo,
+  #ctv5 .sidebar .status,
+  #ctv5 .sidebar .wscard-txt,
+  #ctv5 .sidebar .userrow-txt{display:none;}
+  #ctv5 .sidebar .wscard{justify-content:center;padding:8px;}
+  #ctv5 .sidebar .userrow{justify-content:center;padding:8px 0;border-top:0;}
+  #ctv5 .sidebar .userrow .btn-icon{display:none;}
+  #ctv5 .sidebar nav.nav,#ctv5 .sidebar div.nav{width:100%;}
+  #ctv5 .sidebar .nav a{justify-content:center;padding:0;width:44px;margin:0 auto;position:relative;}
+  #ctv5 .sidebar .nav .lbl{
+    position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
+    flex:none;white-space:nowrap;
+    background:var(--panel);border:1px solid var(--divider);color:var(--text);
+    padding:6px 10px;border-radius:8px;font-size:13px;font-weight:500;
+    opacity:0;pointer-events:none;z-index:30;
+  }
+  #ctv5 .sidebar .nav a:hover .lbl,
+  #ctv5 .sidebar .nav a:focus-visible .lbl{opacity:1;}
+  #ctv5 .sidebar .badge{
+    position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;font-size:10px;
+  }
+  #ctv5 .panel-preview{flex-basis:380px;}
+}
+/* below 900px: sidebar becomes a fixed bottom tab bar; the main area is a
+   single column; the preview leaves the flow and opens in the dialog.
+   Bottom-clearance math (so neither the Preview button nor the tab bar ever
+   covers a field): tab bar 56 + gap 12 + Preview button 48 + gap 12 = 128px,
+   plus the safe-area inset. */
+@media (max-width:899.98px){
+  #ctv5 .shell{display:block;}
+  #ctv5 .sidebar{
+    position:fixed;left:0;right:0;bottom:0;top:auto;
+    width:auto;height:56px;min-height:0;
+    flex-direction:row;gap:0;padding:0 8px;padding-bottom:env(safe-area-inset-bottom,0px);
+    border-right:0;border-top:1px solid var(--divider);
+    overflow:visible;z-index:40;align-items:stretch;
+  }
+  #ctv5 .sidebar .logo,
+  #ctv5 .sidebar .wscard,
+  #ctv5 .sidebar .status,
+  #ctv5 .sidebar .spacer,
+  #ctv5 .sidebar div.nav,
+  #ctv5 .sidebar .userrow{display:none;}
+  #ctv5 .sidebar nav.nav{display:flex;flex-direction:row;width:100%;gap:0;}
+  #ctv5 .sidebar nav.nav a{
+    flex:1;flex-direction:column;gap:2px;min-height:44px;padding:6px 0;
+    border-radius:0;border:0;color:var(--muted);position:relative;
+  }
+  #ctv5 .sidebar nav.nav a .lbl{flex:none;font-size:10.5px;line-height:1.1;}
+  #ctv5 .sidebar nav.nav a[aria-current="page"]{background:transparent;border:0;color:var(--accent);}
+  #ctv5 .sidebar nav.nav .badge{display:none;}
+  #ctv5 .col{min-height:100vh;}
+  #ctv5 #ctv5-main{
+    padding:20px 14px calc(128px + env(safe-area-inset-bottom,0px)) 14px;
+  }
+  #ctv5 .panels{display:block;}
+  #ctv5 .panel-details{width:100%;}
+  #ctv5 .panel{padding:16px;}
   #ctv5 .h1{font-size:30px;}
   #ctv5 .empty .h1{font-size:28px;}
   #ctv5 .fields{grid-template-columns:1fr;}
   #ctv5 .f{grid-column:1 / -1;}
-  #ctv5 .sidebar{align-self:stretch;}
-  #ctv5 .panel-details,#ctv5 .panel-preview{flex:1 1 100%;min-width:0;}
   #ctv5 .topbar{height:auto;min-height:56px;flex-wrap:wrap;padding:8px 14px;}
   #ctv5 .topbar-right{margin-left:0;}
-  #ctv5 main{padding:20px 14px 32px;}
-  #ctv5 .panel{padding:16px;}
+  #ctv5 .mobile-preview-btn{
+    display:inline-flex;position:fixed;left:16px;right:16px;
+    bottom:calc(68px + env(safe-area-inset-bottom,0px));
+    height:48px;z-index:41;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  #ctv5 .preview-dialog{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;}
+  #ctv5 .preview-dialog-inner{height:100dvh;}
 }
 </style>
 
@@ -883,6 +973,24 @@
         </section>
 
       </main>
+
+      <!-- Editor-only, below 900px: fixed above the bottom tab bar. Opens the
+           preview card in a native <dialog> (focus trap + Escape for free). -->
+      <button type="button" class="btn btn-accent mobile-preview-btn" id="mobile-preview-btn" aria-haspopup="dialog">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        Preview
+      </button>
+      <dialog class="preview-dialog" id="preview-dialog" aria-label="Card preview">
+        <div class="preview-dialog-inner">
+          <div class="preview-dialog-head">
+            <p class="mono">Card preview</p>
+            <button type="button" class="btn btn-icon" id="preview-dialog-close" aria-label="Close preview">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6 18 18M18 6 6 18"/></svg>
+            </button>
+          </div>
+          <div class="preview-dialog-scroll" id="preview-dialog-scroll"></div>
+        </div>
+      </dialog>
     </div>
   </div>
 
@@ -1908,6 +2016,61 @@
     { key: 'location', icon: ICONS.pin }
   ];
 
+  /* Build card markup: shared between editor preview and viewer mode.
+     mode: 'editor' (emits handset frame) | 'viewer' (emits card content only, no frame). */
+  function buildCardMarkup(mode) {
+    if (mode === 'viewer') {
+      return '<article class="viewer-card" id="v-card">' +
+        '<div class="hero" id="v-hero" aria-hidden="true"></div>' +
+        '<div class="viewer-card-body">' +
+          '<div class="card-avatar" id="v-initials" aria-hidden="true"></div>' +
+          '<h1 class="card-name" id="v-name"></h1>' +
+          '<p class="card-role" id="v-role"></p>' +
+          '<p class="card-bio" id="v-bio"></p>' +
+          '<div class="card-acts">' +
+            '<button type="button" class="btn btn-accent" id="v-save">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>' +
+              ' Save contact' +
+            '</button>' +
+          '</div>' +
+          '<div class="card-rows" id="v-rows"></div>' +
+        '</div>' +
+      '</article>';
+    }
+    return '<div class="stage">' +
+      '<div class="phone">' +
+        '<span class="nub" aria-hidden="true"></span>' +
+        '<div class="slot" aria-hidden="true"></div>' +
+        '<div class="screen">' +
+          '<div class="hero" id="card-hero" aria-hidden="true"><img class="hero-img" id="card-header-img" alt="" hidden></div>' +
+          '<div class="card-body">' +
+            '<img class="card-avatar-img" id="card-photo" alt="" hidden>' +
+            '<div class="card-avatar" id="card-initials" aria-hidden="true">AM</div>' +
+            '<p class="mono"><span class="dot" style="display:inline-block;margin-right:6px" aria-hidden="true"></span>Live profile</p>' +
+            '<p class="card-name" id="card-name">Alex Morgan</p>' +
+            '<p class="card-role" id="card-role">Design Director at Northstar Studio</p>' +
+            '<p class="card-bio" id="card-bio"></p>' +
+            '<div class="card-acts">' +
+              '<button type="button" class="btn btn-accent" id="card-share">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 13a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1"/><path d="M15 11a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/></svg>' +
+                ' Share' +
+              '</button>' +
+              '<button type="button" class="btn" id="card-save">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>' +
+                ' Save' +
+              '</button>' +
+            '</div>' +
+            '<div class="card-rows" id="card-rows"></div>' +
+            '<div class="card-foot">' +
+              '<span class="mono">Powered by</span>' +
+              '<span class="mono">Control Tower</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
   function renderPreview() {
     var name = fullName(true);
     var role = roleLine(true);
@@ -2601,10 +2764,20 @@
       document.body.style.margin = '0';
       document.body.style.background = '#0B0E10';
     }
+    if (!document.querySelector('meta[name="viewport"]')) {
+      var metaVp = document.createElement('meta');
+      metaVp.name = 'viewport';
+      metaVp.content = 'width=device-width, initial-scale=1';
+      document.head.appendChild(metaVp);
+    }
     var err = $('#viewer-error');
     if (err) { err.hidden = true; }
     var v = $('#viewer');
     v.hidden = false;
+    var main = $('#v-main');
+    if (main) {
+      main.innerHTML = buildCardMarkup('viewer');
+    }
     renderViewer();
     $('#v-save').addEventListener('click', function () { downloadVcf(); });
     $('#v-create').addEventListener('click', function (ev) {
@@ -2613,7 +2786,6 @@
       window.location.reload();
     });
     document.title = (fullName(true) || 'Shared card') + ' — Control Tower';
-    var main = $('#v-main');
     if (main) { main.focus(); }
   }
 
@@ -2622,6 +2794,12 @@
     if (document.body) {
       document.body.style.margin = '0';
       document.body.style.background = '#0B0E10';
+    }
+    if (!document.querySelector('meta[name="viewport"]')) {
+      var metaVp = document.createElement('meta');
+      metaVp.name = 'viewport';
+      metaVp.content = 'width=device-width, initial-scale=1';
+      document.head.appendChild(metaVp);
     }
     var v = $('#viewer');
     if (v) { v.hidden = true; }
@@ -2719,10 +2897,8 @@
   $('#share-close').addEventListener('click', function () { closeShare(); });
   $('#qr-btn').addEventListener('click', function (ev) { openShare(ev.currentTarget); });
   $('#card-share').addEventListener('click', function (ev) { openShare(ev.currentTarget); });
-  $('#preview-btn').addEventListener('click', function (ev) {
-    if (currentRoute() !== 'profile') { window.location.hash = '#/profile'; }
-    openShare(ev.currentTarget);
-  });
+  /* #preview-btn is wired to the card-preview dialog in setupPreviewDialog(),
+     not to openShare — Preview and Share are separate. */
 
   $('#act-device').addEventListener('click', function () {
     var link = shareLink();
@@ -2826,12 +3002,60 @@
     buildFields();
     renderAll();
     route(false);
+    setupPreviewDialog();
 
     store.load().then(function (loaded) {
       if (dirty) { return; }
       state = loaded;
       renderAll();
     }).catch(function () { /* defaults already rendered */ });
+  }
+
+  /* Below 900px the preview leaves the inline column and lives in a native
+     <dialog>; at 900px and up it returns to its sticky column. The same
+     preview node moves between the two homes, so its #card-* ids and
+     renderPreview() wiring stay intact — no duplicate markup. */
+  function setupPreviewDialog() {
+    var panel = $('.panel-preview');
+    var panels = $('.panels');
+    var dialog = $('#preview-dialog');
+    var scroll = $('#preview-dialog-scroll');
+    var closeBtn = $('#preview-dialog-close');
+    /* Both Preview buttons open this dialog: the topbar "Preview card" and the
+       mobile-only fixed "Preview". Neither uses openShare — Share is separate. */
+    var openers = [$('#preview-btn'), $('#mobile-preview-btn')];
+    if (!panel || !panels || !dialog || !scroll || !closeBtn) { return; }
+
+    var mq = window.matchMedia('(max-width:899.98px)');
+
+    function toInline() { if (panel.parentNode !== panels) { panels.appendChild(panel); } }
+    function toDialog() { if (panel.parentNode !== scroll) { scroll.appendChild(panel); } }
+
+    /* Resting home while the dialog is closed: the inline sticky column at
+       >=900px, or — on mobile, where there is no inline column — parked in the
+       closed dialog. The single card node keeps its #card-* ids and its
+       renderPreview() wiring wherever it lives. */
+    function rest() { if (mq.matches) { toDialog(); } else { toInline(); } }
+
+    if (mq.addEventListener) { mq.addEventListener('change', function () { if (!dialog.open) { rest(); } }); }
+    else if (mq.addListener) { mq.addListener(function () { if (!dialog.open) { rest(); } }); } /* older Safari */
+    rest();
+
+    /* Native <dialog>.showModal(): focus trap, Escape-to-close, and focus
+       restored to whichever button opened it — all for free. The dialog body
+       is its own scroll container, and opening does not scroll the page, so
+       the form's scroll position is preserved. */
+    function openPreview() {
+      toDialog();
+      if (typeof dialog.showModal === 'function') { dialog.showModal(); }
+      else { dialog.setAttribute('open', ''); } /* fallback: no focus trap, but visible */
+    }
+
+    dialog.addEventListener('close', rest);            /* Escape or close() -> re-home the card */
+    closeBtn.addEventListener('click', function () { dialog.close(); });
+    openers.forEach(function (btn) {
+      if (btn) { btn.addEventListener('click', function () { openPreview(); }); }
+    });
   }
 }());
 </script>
