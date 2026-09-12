@@ -312,18 +312,18 @@ html, body {
 #ctv5 .hero{height:104px;background:var(--hero);}
 #ctv5 .card-body{position:relative;z-index:1;padding:0 16px 16px;margin-top:-48px;}
 #ctv5 .card-avatar{
-  width:100px;height:100px;border-radius:50%;
+  width:80px;height:80px;border-radius:50%;
   background:#12203A;border:4.5px solid var(--accent);color:var(--accent);
   display:flex;align-items:center;justify-content:center;
   font-size:19px;font-weight:600;letter-spacing:.02em;margin-bottom:12px;
 }
-#ctv5 .card-name{font-size:32px;font-weight:600;letter-spacing:-.02em;margin-top:6px;}
+#ctv5 .card-name{font-size:28px;font-weight:600;letter-spacing:-.02em;margin-top:6px;}
 #ctv5 .card-role{font-size:12px;color:var(--muted);margin-top:2px;}
 #ctv5 .card-bio{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5;}
 #ctv5 .card-acts{display:none;gap:8px;margin-top:14px;}
 #ctv5 .card-acts .btn{flex:1;min-height:44px;padding:0 10px;font-size:12.5px;border-radius:5px;}
 #ctv5 .card-rows{margin-top:14px;border-top:1px solid var(--divider);padding-top:12px;display:flex;flex-direction:column;gap:10px;}
-#ctv5 .card-row{display:flex;align-items:center;gap:10px;font-size:16px;color:var(--text);}
+#ctv5 .card-row{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);}
 #ctv5 .icontile{
   flex:none;width:22px;height:22px;border-radius:5px;
   background:#152036;color:var(--accent);
@@ -698,8 +698,6 @@ html, body {
   #ctv5 .panel{padding:16px;}
   #ctv5 .h1{font-size:30px;}
   #ctv5 .empty .h1{font-size:28px;}
-  #ctv5 .fields{grid-template-columns:1fr;}
-  #ctv5 .f{grid-column:1 / -1;}
   #ctv5 .topbar{height:auto;min-height:56px;flex-wrap:wrap;padding:8px 14px;}
   #ctv5 .topbar-right{margin-left:0;}
   /* below 900: Search and Export are icon-only; the aria-label carries the
@@ -714,6 +712,25 @@ html, body {
   #ctv5 .preview-dialog-head .mono{display:none;}
   #ctv5 #preview-dialog-close{background:rgba(11,14,16,.55);color:#fff;}
   #ctv5 .preview-dialog-scroll{padding:0;background:var(--panel);}
+}
+
+/* ---------- field area: two columns at tablet width ---------- */
+/* Tablet (600–899px): the field groups sit two-up. minmax(0,1fr) — not a bare
+   1fr — so a long value can't push its track wider than half the row. */
+@media (min-width:600px) and (max-width:899.98px){
+  #ctv5 .fields{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    column-gap:20px;
+    row-gap:16px;
+  }
+  /* full width: the span-2 groups (Work email, Location, Bio textarea) */
+  #ctv5 .fields .f-span2{grid-column:1 / -1;}
+}
+/* Phone (below 600px): one column. */
+@media (max-width:599.98px){
+  #ctv5 .fields{grid-template-columns:1fr;}
+  #ctv5 .fields .f{grid-column:1 / -1;}
 }
 </style>
 
