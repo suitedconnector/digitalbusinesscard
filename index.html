@@ -284,6 +284,11 @@ html, body {
 #ctv5 .stage{display:flex;justify-content:center;}
 #ctv5 .phone{
   position:relative;width:308px;max-width:100%;
+  /* fixed frame height: derived from the aspect ratio and the viewport, never
+     from card content. The screen inside scrolls instead. */
+  aspect-ratio:390 / 844;
+  max-height:calc(100vh - 140px);
+  display:flex;flex-direction:column;
   background:var(--bezel);border:1px solid var(--divider);
   border-radius:40px;padding:12px; /* physical bezel radius, not UI chrome */
 }
@@ -299,7 +304,9 @@ html, body {
   width:52px;height:4px;border-radius:5px;background:var(--divider);margin:2px auto 0;
 }
 #ctv5 .screen{
-  background:var(--panel);border-radius:32px;overflow:hidden;
+  flex:1 1 0;min-height:0;height:100%; /* min-height:0 lets a flex child scroll */
+  overflow-y:auto;overscroll-behavior:contain;
+  background:var(--panel);border-radius:32px;
   border:1px solid var(--divider); /* screen radius matches the card it holds */
 }
 #ctv5 .hero{height:104px;background:var(--hero);}
@@ -431,8 +438,8 @@ html, body {
   flex:1 0 auto;display:flex;flex-direction:column;
 }
 #ctv5 .viewer .card-avatar{
-  width:64px;height:64px;border-radius:50%;
-  background:#12203A;border:1.5px solid var(--accent);color:var(--accent);
+  width:120px;height:120px;border-radius:50%;
+  background:#12203A;border:4.5px solid var(--accent);color:var(--accent);
   display:flex;align-items:center;justify-content:center;
   font-size:19px;font-weight:600;letter-spacing:.02em;margin-bottom:12px;
 }
